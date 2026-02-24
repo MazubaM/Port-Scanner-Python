@@ -1,29 +1,19 @@
 import argparse
-from scanner import scan_range
+from scanner import scan_range_threaded
 
-def parse_ports(text: str) -> tuple[int, int]:
-    parts = text.split("-")
-    if len(parts) != 2:
-        raise argparse.ArgumentTypeError("Use START-END, e.g. 1-1024")
-
-    start = int(parts[0])
-    end = int(parts[1])
-
-    if start < 1 or end > 65535 or start > end:
-        raise argparse.ArgumentTypeError("Ports must be 1-65535 and START <= END")
-
-    return start, end
+# ... keep parse_ports unchanged ...
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Simple TCP port scanner (authorized use only).")
     parser.add_argument("host", help="Target host, e.g. 127.0.0.1")
     parser.add_argument("--ports", type=parse_ports, default="1-1024", help="Port range START-END (default 1-1024)")
     parser.add_argument("--timeout", type=float, default=0.5, help="Timeout in seconds (default 0.5)")
+    parser.add_argument("--workers", type=int, default=100, help="Thread workers (default 100)")
     args = parser.parse_args()
 
     start_port, end_port = args.ports
 
-    open_ports = scan_range(args.host, start_port, end_port, args.timeout)
+    open_ports = scan_range_threaded(args.host, start_port, end_port, args.timeout, args.workers)
 
     if open_ports:
         for p in open_ports:
